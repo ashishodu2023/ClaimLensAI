@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --accent-glow: rgba(61, 127, 255, 0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background-color: #0a0d14;
+    color: #e8ecf5;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0a0d14; }
+  ::-webkit-scrollbar-thumb { background: #1e2740; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2a3550; }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-border rounded-xl p-5;
+  }
+
+  .input-field {
+    @apply w-full bg-surface2 border border-border text-white text-sm px-3 py-2 rounded-md
+           outline-none transition-colors focus:border-accent placeholder-muted;
+  }
+
+  .select-field {
+    @apply w-full bg-surface2 border border-border text-white text-sm px-3 py-2 rounded-md
+           outline-none transition-colors focus:border-accent appearance-none cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply w-full bg-accent hover:bg-blue-600 text-white font-semibold text-sm py-3 px-4
+           rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply bg-surface2 hover:border-accent text-white text-xs font-medium py-1.5 px-3
+           rounded border border-border transition-colors cursor-pointer;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-muted mb-1.5;
+  }
+
+  .section-heading {
+    @apply text-xs font-semibold text-muted uppercase tracking-widest mb-3.5;
+  }
+
+  .badge {
+    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full border;
+  }
+}

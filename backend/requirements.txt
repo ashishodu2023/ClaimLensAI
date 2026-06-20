@@ -1,0 +1,20 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+uvloop==0.20.0
+
+# Anthropic
+anthropic>=0.40.0
+
+# Data / validation
+pydantic>=2.0.0
+orjson==3.10.6
+
+# Resilience
+tenacity==8.5.0
+
+# Caching (in-process; swap for redis in prod)
+cachetools==5.4.0
+
+# Upload handling
+python-multipart==0.0.12

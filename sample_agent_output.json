@@ -1,0 +1,75 @@
+[
+  {
+    "claim_id": "CLM-2024-CAR-001",
+    "object_type": "car",
+    "extracted_claim": "User claims rear bumper has a significant dent and paint scratches on the right side from a parking lot collision.",
+    "verdict": "SUPPORTED",
+    "verdict_confidence": "high",
+    "issue_type": "dent",
+    "object_part": "rear bumper",
+    "supporting_image_ids": ["IMG-001-A", "IMG-001-B"],
+    "risk_flags": [],
+    "severity": "moderate",
+    "justification": "Visual evidence supports the claim. [IMG-001-A] Clear dent visible on the right side of the rear bumper with paint transfer and crease marks consistent with a low-speed parking lot impact. [IMG-001-B] Secondary angle confirms depth of dent and shows silver paint scuff marks from the other vehicle.",
+    "image_analysis_summary": "IMG-001-A: SUPPORTED | Clear dent with paint transfer on right rear bumper (quality: good); IMG-001-B: SUPPORTED | Confirms dent depth, paint scuff visible (quality: good)",
+    "evidence_sufficient": true,
+    "reviewer_notes": "No additional reviewer notes.",
+    "processed_at": "2024-01-15T10:31:04Z"
+  },
+  {
+    "claim_id": "CLM-2024-LAPTOP-002",
+    "object_type": "laptop",
+    "extracted_claim": "User claims laptop screen has a large crack across the middle with dead pixels and the chassis corner is bent after a fall from desk onto hardwood floor.",
+    "verdict": "INSUFFICIENT",
+    "verdict_confidence": "low",
+    "issue_type": "crack",
+    "object_part": "screen",
+    "supporting_image_ids": [],
+    "risk_flags": [
+      {
+        "flag_type": "image_quality",
+        "severity": "high",
+        "description": "Image IMG-002-A: Poor quality — blurry, partial_view, dark"
+      },
+      {
+        "flag_type": "user_history",
+        "severity": "medium",
+        "description": "User account has 1 prior fraud flag(s)"
+      },
+      {
+        "flag_type": "user_history",
+        "severity": "medium",
+        "description": "High claim rejection rate: 40% (2/5 claims rejected)"
+      }
+    ],
+    "severity": "minor",
+    "justification": "Visual evidence is insufficient to verify or deny the claim. [IMG-002-A] Image is too dark and blurry to confirm screen damage. The laptop body appears to be present but damage detail cannot be assessed from this image.",
+    "image_analysis_summary": "IMG-002-A: INSUFFICIENT | Cannot confirm screen crack, image quality insufficient (quality: poor)",
+    "evidence_sufficient": false,
+    "reviewer_notes": "Only 1 image(s) submitted; minimum required is 2. 1 high-severity risk flag(s) — manual review recommended.",
+    "processed_at": "2024-01-15T10:31:28Z"
+  },
+  {
+    "claim_id": "CLM-2024-PKG-003",
+    "object_type": "package",
+    "extracted_claim": "User claims package arrived with one side completely crushed, contents (ceramic vase) broken, and packaging tape appears to have been cut and resealed.",
+    "verdict": "SUPPORTED",
+    "verdict_confidence": "high",
+    "issue_type": "crushed",
+    "object_part": "outer packaging",
+    "supporting_image_ids": ["IMG-003-A", "IMG-003-B", "IMG-003-C"],
+    "risk_flags": [
+      {
+        "flag_type": "authenticity",
+        "severity": "high",
+        "description": "Image IMG-003-B: Tape on package shows uneven adhesion pattern inconsistent with factory application — possible resealing as claimed"
+      }
+    ],
+    "severity": "severe",
+    "justification": "Visual evidence supports the claim. [IMG-003-A] Right side of box shows severe crush damage with cardboard folded inward approximately 3 inches — consistent with significant impact. [IMG-003-B] Close-up of tape shows different adhesion pattern on one seam suggesting the package was opened and resealed. [IMG-003-C] Interior shows ceramic fragments consistent with broken vase description.",
+    "image_analysis_summary": "IMG-003-A: SUPPORTED | Severe crush damage right side, structural failure visible (quality: good); IMG-003-B: SUPPORTED | Tape resealing evidence visible (quality: good); IMG-003-C: SUPPORTED | Ceramic fragments matching claimed broken contents (quality: good)",
+    "evidence_sufficient": true,
+    "reviewer_notes": "1 high-severity risk flag(s) — manual review recommended.",
+    "processed_at": "2024-01-15T10:31:55Z"
+  }
+]
