@@ -1,6 +1,6 @@
-# Multi-Modal Damage Claim Review System
+# ClaimLens — AI Damage Claim Intelligence
 
-An AI-powered damage claim verification system using Claude Vision to analyze images and determine whether submitted evidence **supports**, **contradicts**, or is **insufficient** to verify a user's damage claim.
+An AI-powered damage claim verification system using Claude Vision to analyze images and determine whether submitted evidence **supports**, **contradicts**, or is **insufficient** to verify a damage claim across cars, laptops, and packages.
 
 ---
 
@@ -18,39 +18,44 @@ flowchart TD
     end
 
     subgraph EXTRACT["Step 1 — Claim Extraction"]
-        E1[["Claude Sonnet — Text\nextract_claim_from_conversation()"]]
-        E2(["Extracted claim sentence"])
+        E1[["Claude Sonnet — Text\nextract_claim_from_conversation"]]
+        E2["Extracted claim sentence"]
     end
 
     subgraph VISION["Step 2 — Per-Image Vision Analysis"]
         direction LR
-        IMG1[["Image 1\nanalyze_image_with_vision()"]]
-        IMG2[["Image 2\nanalyze_image_with_vision()"]]
-        IMGN[["Image N..."])
-        PERIMG(["Per-image JSON\nverdict · issue_type · object_part\nimage_quality · authenticity"])
+        IMG1[["Image 1\nanalyze_image_with_vision"]]
+        IMG2[["Image 2\nanalyze_image_with_vision"]]
+        IMGN[["Image N\nanalyze_image_with_vision"]]
+        PERIMG["Per-image JSON\nverdict · issue_type · object_part\nimage_quality · authenticity"]
     end
 
     subgraph AGGREGATE["Step 3 — Verdict Aggregation"]
         direction TB
-        AGG1{"Any image\nCONTRADICTED?"}
-        AGG2{"count SUPPORTED\n>= min_required?"}
-        R1(["CONTRADICTED\nevidence_sufficient=true"])
-        R2(["SUPPORTED\nevidence_sufficient=true"])
-        R3(["INSUFFICIENT\nevidence_sufficient=false"])
+        AGG1{Any image\nCONTRADICTED?}
+        AGG2{count SUPPORTED\n>= min_required?}
+        R1["CONTRADICTED\nevidence_sufficient=true"]
+        R2["SUPPORTED\nevidence_sufficient=true"]
+        R3["INSUFFICIENT\nevidence_sufficient=false"]
     end
 
-    subgraph FLAGS["Step 4 — Risk Flag Engine"]
+    subgraph AGENT["Step 4 — Reasoning Agent"]
+        RA[["Claude Sonnet — Text\ncross-image holistic review"]]
+        RB["chain_of_thought\noverride if needed"]
+    end
+
+    subgraph FLAGS["Step 5 — Risk Flag Engine"]
         direction LR
         F1["image_quality\npoor / fair"]
         F2["mismatch\nwrong object type"]
         F3["authenticity\nediting signals"]
-        F4["user_history\nfraud · risk score · rejection rate"]
+        F4["user_history\nfraud · rejection rate"]
     end
 
     subgraph OUTPUT["Final Response — EvidenceReviewResult"]
         direction TB
         OUT1["verdict · confidence · severity\nissue_type · object_part · supporting_image_ids"]
-        OUT2["risk_flags · justification\nreviewer_notes · processed_at"]
+        OUT2["risk_flags · justification · chain_of_thought\nreviewer_notes · processed_at · processing_ms"]
     end
 
     ERR([400 Bad Request])
@@ -74,9 +79,11 @@ flowchart TD
     AGG1 -->|no| AGG2
     AGG2 -->|yes| R2
     AGG2 -->|no| R3
-    R1 --> F1
-    R2 --> F1
-    R3 --> F1
+    R1 --> RA
+    R2 --> RA
+    R3 --> RA
+    RA --> RB
+    RB --> F1
     F1 --> F2 --> F3 --> F4
     F4 --> OUT1
     F4 --> OUT2
@@ -96,6 +103,18 @@ flowchart TD
 
 ---
 
+## Pipeline — 5 Steps
+
+| Step | What happens | Claude calls |
+|---|---|---|
+| **1. Claim extraction** | Conversation → 1-sentence damage claim (cached) | 1 text call |
+| **2. Vision analysis** | All images analyzed in parallel via `asyncio.gather` | N vision calls |
+| **3. Aggregation** | Pure Python — contradiction override, min evidence gate | 0 |
+| **4. Reasoning Agent** | Holistic cross-image review, can override preliminary verdict | 1 text call |
+| **5. Risk flags** | Post-verdict — structurally cannot change the verdict | 0 |
+
+---
+
 ## Risk Flag Categories
 
 | Flag type | Severity | Trigger |
@@ -109,36 +128,56 @@ flowchart TD
 
 ---
 
+## WhatsApp Intake
+
+ClaimLens supports end-to-end claim filing via WhatsApp — no portal, no app download.
+
+```
+Customer texts "hi"
+      ↓
+Bot asks: car / laptop / package?
+      ↓
+Bot asks: describe the damage
+      ↓
+Customer sends 1–5 photos → replies DONE
+      ↓
+AI pipeline runs in background (~30s)
+      ↓
+Bot replies with verdict + severity + next steps
+```
+
+See [WHATSAPP_SETUP.md](./WHATSAPP_SETUP.md) for Twilio configuration.
+
+---
+
 ## Project Structure
 
 ```
 evidence-review/
 ├── backend/
-│   ├── app.py                  # FastAPI server — core pipeline
+│   ├── app.py                  # FastAPI — full AI pipeline
+│   ├── whatsapp.py             # Twilio WhatsApp intake
+│   ├── server.py               # Production entry (uvloop + httptools)
 │   └── requirements.txt
-├── frontend-node/              # React + Vite + Node.js frontend
+├── frontend/
 │   ├── src/
-│   │   ├── App.jsx             # Root with routing
-│   │   ├── main.jsx
+│   │   ├── App.jsx
 │   │   ├── components/
 │   │   │   ├── Header.jsx
-│   │   │   ├── ClaimForm.jsx       # Full sidebar form
+│   │   │   ├── ClaimForm.jsx
 │   │   │   ├── ConversationBuilder.jsx
-│   │   │   ├── ImageUploader.jsx   # react-dropzone
-│   │   │   ├── MermaidDiagram.jsx  # Live architecture diagram
-│   │   │   └── ResultPanel.jsx     # Verdict display
+│   │   │   ├── ImageUploader.jsx
+│   │   │   ├── MermaidDiagram.jsx
+│   │   │   └── ResultPanel.jsx
 │   │   ├── pages/
 │   │   │   ├── ReviewPage.jsx
 │   │   │   └── ArchitecturePage.jsx
 │   │   └── utils/
-│   │       ├── api.js              # axios client
-│   │       └── helpers.js          # presets, base64 helpers
+│   │       ├── api.js
+│   │       └── helpers.js
 │   ├── package.json
-│   └── vite.config.js              # proxies /api -> FastAPI :8000
-├── sample_data/sample_claims.py
-├── tests/test_api.py
-├── sample_agent_output.json
-├── Dockerfile
+│   └── vite.config.js
+├── WHATSAPP_SETUP.md
 ├── docker-compose.yml
 └── README.md
 ```
@@ -147,7 +186,7 @@ evidence-review/
 
 ## Setup
 
-### Backend (FastAPI + Python)
+### Backend
 
 ```bash
 pip install -r backend/requirements.txt
@@ -155,23 +194,15 @@ export ANTHROPIC_API_KEY=your_key_here
 uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
-### Frontend (Node.js + React + Vite)
+### Frontend
 
 ```bash
-cd frontend-node
+cd frontend
 npm install
 npm run dev        # http://localhost:3000
 ```
 
-Vite proxies `/api` to `http://localhost:8000` automatically — no CORS config needed in dev.
-
-### Production build
-
-```bash
-npm run build      # outputs to dist/
-```
-
-### Docker (full stack)
+### Docker
 
 ```bash
 docker-compose up
@@ -208,20 +239,19 @@ docker-compose up
 ```json
 {
   "claim_id": "CLM-2024-001",
-  "object_type": "car",
-  "extracted_claim": "User claims rear bumper dent and paint scratches from parking lot collision.",
   "verdict": "SUPPORTED",
   "verdict_confidence": "high",
+  "severity": "moderate",
   "issue_type": "dent",
   "object_part": "rear bumper",
   "supporting_image_ids": ["IMG-001"],
   "risk_flags": [],
-  "severity": "moderate",
-  "justification": "Visual evidence supports the claim. [IMG-001] Clear dent visible on rear bumper with paint transfer.",
-  "image_analysis_summary": "IMG-001: SUPPORTED | Dent on rear bumper (quality: good)",
+  "justification": "IMG-001 shows a clear dent on the rear bumper with paint transfer.",
+  "chain_of_thought": "Single image clearly shows rear bumper dent matching the described collision.",
+  "overrode_preliminary": false,
   "evidence_sufficient": true,
-  "reviewer_notes": "No additional reviewer notes.",
-  "processed_at": "2024-01-15T10:31:04Z"
+  "processed_at": "2024-01-15T10:31:04Z",
+  "processing_ms": 2847
 }
 ```
 
@@ -229,42 +259,27 @@ docker-compose up
 
 Array of claim requests. Returns `{ results, errors, total }`.
 
+### POST /whatsapp/webhook
+
+Twilio webhook for WhatsApp intake. See [WHATSAPP_SETUP.md](./WHATSAPP_SETUP.md).
+
 ---
 
 ## Supported Object Types
 
 | Type | Example issues |
 |---|---|
-| `car` | dent, scratch, crack, broken glass, fire damage |
-| `laptop` | broken_screen, bent chassis, water_damage, missing key |
-| `package` | crushed, torn_packaging, missing seal, broken contents |
-
----
-
-## Frontend (Node.js)
-
-Built with React 18 + Vite + Tailwind CSS. Key packages:
-
-| Package | Purpose |
-|---|---|
-| `react-dropzone` | Drag-and-drop image uploader |
-| `mermaid@11` | Live architecture diagram rendering |
-| `react-router-dom` | Two-tab navigation (Review / Architecture) |
-| `axios` | API client with timeout and error handling |
-| `react-hot-toast` | Verdict notifications |
-| `lucide-react` | Icon set |
-
-### Pages
-
-- **`/`** — Claim Review: sidebar form + live verdict panel
-- **`/architecture`** — Architecture: live Mermaid diagram + stage breakdown + decision logic
+| `car` | dent, scratch, crack, glass_shatter, broken_part |
+| `laptop` | crack, broken_part, water_damage, missing_part |
+| `package` | crushed_packaging, torn_packaging, water_damage, stain |
 
 ---
 
 ## Design Decisions
 
-1. **Images are the source of truth.** User history risk scores produce flags only — never change the verdict.
+1. **Images are the source of truth.** User history produces flags only — never changes the verdict.
 2. **Contradiction overrides everything.** One contradicting image beats any number of supporting images.
-3. **Two Claude calls per claim.** Text call for claim extraction (fast), then one Vision call per image.
-4. **Structured JSON vision prompts.** Typed fields enforced — no free-text parsing in aggregation.
-5. **Risk flags are post-verdict.** Strict separation of evidence vs. risk context.
+3. **Deterministic step before agent.** Pure Python aggregation provides a safe fallback if the agent fails.
+4. **Risk flags are post-verdict.** Structurally impossible for flags to influence the verdict.
+5. **Prompt injection defense.** Text instructions in images are flagged and ignored; visual evidence decides.
+6. **Multilingual by default.** Claim conversations and image text in any language are handled natively.
